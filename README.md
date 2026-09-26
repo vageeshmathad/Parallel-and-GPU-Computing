@@ -2,19 +2,20 @@
 
 ## 1. Executive Summary
 
-This project presents a comparative benchmarking study of dense $4000 \times 4000$ Matrix Multiplication ($C = A \times B$) across three fundamental computing models: **Sequential CPU Baseline**, **OpenMP Shared-Memory Multi-Threading**, and **Open MPI Distributed-Memory Clustering**.
+This project presents a comparative benchmarking study of dense $4000 \times 4000$ Matrix Multiplication ($C = A \times B$) across four fundamental computing models: **Sequential CPU Baseline**, **OpenMP Shared-Memory Multi-Threading**, **Open MPI Distributed-Memory Clustering**, and **CUDA GPU Massively Parallel Acceleration**.
 
-Each paradigm executes an identical workload of 128 GFLOPs ($16,000,000$ double-precision elements) with deterministic mathematical verification ($C[i][j] = 4000.00$).
+Each paradigm executes an identical workload of 128 GFLOPs ($16,000,000$ output elements) with deterministic mathematical verification ($C[i][j] = 4000.00$).
 
 ---
 
 ## 2. Key Findings
 
-- **OpenMP is fastest**: 40.55 s (6.02× speedup using 8 threads in shared memory).
+- **CUDA achieves massive speedup**: 0.34 s ($711.66\times$ total speedup, $770.40\times$ kernel speedup across 16,000,000 GPU threads).
+- **OpenMP is fastest CPU model**: 40.55 s (6.02× speedup using 8 threads in shared memory).
 - **Open MPI scales across nodes**: 92.98 s (2.63× speedup across a 4-node VM cluster).
 - **Sequential baseline is slowest**: 244.12 s (single-core CPU execution).
-- **Memory vs. Network**: OpenMP is 2.3× faster than MPI because local RAM access is significantly faster than virtual network packet transmission.
-- **Results verified**: All three implementations produced the exact same output ($C[0][0] = 4000.00$).
+- **Hierarchy of Parallelism**: GPU Acceleration (0.34 s) $\gg$ Shared CPU RAM (40.55 s) $\gg$ Multi-Node Network (92.98 s) $\gg$ Single Core (244.12 s).
+- **Results verified**: All four implementations produced the exact same output ($C[0][0] = 4000.00$).
 
 ---
 
@@ -29,6 +30,7 @@ Each paradigm executes an identical workload of 128 GFLOPs ($16,000,000$ double-
    * [6.1 Sequential CPU Baseline](#61-sequential-cpu-baseline)
    * [6.2 OpenMP Shared-Memory Multi-Threading](#62-openmp-shared-memory-multi-threading)
    * [6.3 Open MPI Multi-Node Distributed Cluster](#63-open-mpi-multi-node-distributed-cluster)
+   * [6.4 CUDA GPU Massively Parallel Acceleration](#64-cuda-gpu-massively-parallel-acceleration)
 7. [Architectural Deep-Dive & System Trade-Offs](#7-architectural-deep-dive--system-trade-offs)
 8. [Cluster Topology & Hardware Specifications](#8-cluster-topology--hardware-specifications)
 9. [Step-by-Step Reproduction Guide](#9-step-by-step-reproduction-guide)
@@ -46,9 +48,9 @@ $$C[i][j] = \sum_{k=0}^{3999} A[i][k] \times B[k][j] \quad \text{for } 0 \le i, 
 * **Output Dimensions**: $4000 \times 4000 = 16,000,000$ distinct output elements.
 * **Arithmetic Complexity**: Each cell requires 4000 multiplications and 4000 additions:
   $$\text{Total Floating-Point Operations} = 2 \times N^3 = 2 \times (4000)^3 = 128,000,000,000 \text{ FLOPs } (128 \text{ GFLOPs})$$
-* **Storage Footprint**: Using IEEE 754 64-bit double-precision numbers ($8\text{ bytes/element}$):
-  $$\text{Memory per Matrix} = 4000 \times 4000 \times 8 \text{ bytes} \approx 128 \text{ MB (122.07 MiB)}$$
-  $$\text{Total Working Memory (A + B + C)} = 3 \times 128 \text{ MB} = 384 \text{ MB}$$
+* **Storage Footprint**:
+  * Double-precision ($8\text{ bytes/element}$): $4000 \times 4000 \times 8\text{ bytes} \approx 128\text{ MB/matrix}$ ($384\text{ MB total}$).
+  * Single-precision ($4\text{ bytes/element}$, CUDA): $4000 \times 4000 \times 4\text{ bytes} \approx 64\text{ MB/matrix}$ ($192\text{ MB total}$).
 * **Verification Proof**: Because $A[i][k] = 1.0$ and $B[k][j] = 1.0$ for all elements:
   $$C[i][j] = \sum_{k=0}^{3999} (1.0 \times 1.0) = 4000.00$$
   Exact mathematical verification requires $C[0][0] = 4000.00$ and $C[N-1][N-1] = 4000.00$.
@@ -60,14 +62,17 @@ $$C[i][j] = \sum_{k=0}^{3999} A[i][k] \times B[k][j] \quad \text{for } 0 \le i, 
 | Paradigm | Architecture Model | Compute Resources | Execution Time | Speedup ($S = \frac{T_{seq}}{T_{p}}$) | Parallel Efficiency ($\frac{S}{P}$) | Verification $C[0][0]$ |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
 | **Sequential** | Single-threaded CPU | 1 CPU Core | **244.120000 s** | **1.00×** (Baseline) | 100.0% (Ref) | `4000.00` (PASS) |
-| **OpenMP** | Shared-memory thread pool | 8 vCPU Cores | **40.545825 s** | **6.02×** | **75.3%** | `4000.00` (PASS) |
 | **Open MPI** | Distributed cluster | 4 Nodes (VMs) | **92.979510 s** | **2.63×** | **65.8%** | `4000.00` (PASS) |
+| **OpenMP** | Shared-memory thread pool | 8 vCPU Cores | **40.545825 s** | **6.02×** | **75.3%** | `4000.00` (PASS) |
+| **CUDA (Total Phase)** | GPU SIMT Acceleration | 16,000,000 Threads | **0.343028 s** | **711.66×** | — | `4000.00` (PASS) |
+| **CUDA (Kernel Only)** | GPU SIMT Hardware | 16,000,000 Threads | **0.316872 s** | **770.40×** | — | `4000.00` (PASS) |
 
 ```
-Execution Time (Lower is Better)
-Sequential Baseline : [████████████████████████████████████████] 244.12 s (Baseline)
+Execution Time (Lower is Better - Dramatic Performance Scaling)
+Sequential Baseline : [████████████████████████████████████████] 244.12 s (1.00x Baseline)
 Open MPI (4 VMs)    : [███████████████                        ] 92.98 s  (2.63x speedup)
 OpenMP (8 Cores)    : [██████                                ] 40.55 s  (6.02x speedup)
+CUDA GPU Phase      : [▏                                     ] 0.34 s   (711.66x speedup)
 ```
 
 ---
@@ -101,20 +106,29 @@ OpenMP (8 Cores)    : [██████                                ] 40.55
   * `MPI_Gather`: Gathers partial results back to Rank 0 into global Matrix $C$.
 * **Detailed Technical Report**: [View Open MPI Experiment](./MPI.md)
 
+### 6.4 CUDA GPU Massively Parallel Acceleration
+* **Model**: SIMT (Single Instruction, Multiple Threads) architecture running on NVIDIA GPU hardware.
+* **Execution Grid**:
+  * Block dimensions: $16 \times 16$ threads (256 threads per block).
+  * Grid dimensions: $250 \times 250$ blocks (62,500 thread blocks).
+  * Total concurrent threads: **16,000,000 logical threads** (1 dedicated thread per matrix element).
+* **Data Flow**: Host allocates pinned/heap memory, transfers $A$ and $B$ to device memory via PCIe (`cudaMemcpyHostToDevice`), invokes the GPU kernel, and transfers $C$ back (`cudaMemcpyDeviceToHost`).
+* **Detailed Technical Report**: [View CUDA Experiment](./CUDA.md)
+
 ---
 
 ## 7. Architectural Deep-Dive & System Trade-Offs
 
-### Shared Memory (OpenMP) vs. Distributed Memory (MPI)
-A critical evaluation for reviewers is understanding why OpenMP ($40.55\text{ s}$) was over $2.2\times$ faster than MPI ($92.98\text{ s}$):
+### Cross-Paradigm Architectural Comparison
 
-| Dimension | OpenMP Shared Memory | Open MPI Distributed Memory |
-| :--- | :--- | :--- |
-| **Address Space** | Unified single address space | Disjoint private memory per node |
-| **Data Access Latency** | Nanosecond-scale RAM/Cache bus access | Millisecond-scale TCP/IP packet transmission |
-| **Interconnect** | Internal CPU interconnect | Virtualized software Ethernet bridge |
-| **Data Movement** | Zero-copy shared read of Matrix B | Explicit serialization of 128 MB broadcast |
-| **Scaling Horizon** | Bounded by single motherboard sockets | Horizontally scalable to thousands of nodes |
+| Dimension | OpenMP Shared Memory | Open MPI Distributed Memory | CUDA GPU Accelerator |
+| :--- | :--- | :--- | :--- |
+| **Hardware Target** | Multi-core CPU socket | Multi-node VM / bare-metal cluster | NVIDIA GPU Streaming Multiprocessors |
+| **Concurrency Scale** | 8 threads | 4 independent nodes (processes) | 16,000,000 threads (62,500 blocks) |
+| **Address Space** | Unified virtual address space | Disjoint private memory per node | Dedicated high-bandwidth VRAM (GDDR/HBM) |
+| **Data Access Latency** | Nanosecond-scale RAM/L3 cache | Millisecond-scale TCP/IP Ethernet packet transfer | Terabyte/s on-chip memory bandwidth |
+| **Data Movement** | Zero-copy shared read of Matrix B | Explicit serialization of 128 MB broadcast | Explicit DMA transfer over PCIe bus |
+| **Scaling Horizon** | Motherboard socket limits | Scalable to thousands of cluster nodes | Scalable across multi-GPU / NVLink topologies |
 
 ---
 
@@ -131,8 +145,9 @@ A critical evaluation for reviewers is understanding why OpenMP ($40.55\text{ s}
   (Rank 1)         (Rank 2)         (Rank 3)
 ```
 
-* **Operating System**: Ubuntu 22.04 LTS (WSL2 & VMware Workstation)
-* **Compiler**: GCC 11.4.0 with `-O2` optimization
+* **Operating System**: Ubuntu 22.04 LTS (WSL2 & VMware Workstation) / Windows CUDA Host
+* **CPU Compiler**: GCC 11.4.0 with `-O2` optimization
+* **GPU Compiler**: NVIDIA CUDA Compiler Driver (`nvcc`) with `-O2`
 * **MPI Implementation**: Open MPI 5.0.10 / 4.1.6 (`mpicc`, `mpirun`)
 * **Security & Transport**: OpenSSH Server 8.9p1 with RSA 3072-bit passwordless authentication
 
@@ -140,20 +155,20 @@ A critical evaluation for reviewers is understanding why OpenMP ($40.55\text{ s}
 
 ## 9. Step-by-Step Reproduction Guide
 
-### Compile and Run Sequential:
+### 1. Compile and Run Sequential:
 ```bash
 gcc -O2 matrix_sequential.c -o matrix_sequential
 ./matrix_sequential
 ```
 
-### Compile and Run OpenMP:
+### 2. Compile and Run OpenMP:
 ```bash
 export OMP_NUM_THREADS=8
 gcc -O2 -fopenmp matrix_openmp.c -o matrix_openmp
 ./matrix_openmp
 ```
 
-### Compile and Launch Distributed MPI Cluster:
+### 3. Compile and Launch Distributed MPI Cluster:
 ```bash
 # Compile on Master
 mpicc -O2 matrix_mpi.c -o matrix_mpi
@@ -167,6 +182,15 @@ scp matrix_mpi worker3:~/matrix_mpi
 mpirun -np 4 --hostfile hosts sh -c '$HOME/matrix_mpi'
 ```
 
+### 4. Compile and Run CUDA GPU Acceleration:
+```bash
+# Compile CUDA C++ program
+nvcc -O2 matrix_cuda.cu -o matrix_cuda.exe
+
+# Execute CUDA matrix multiplication
+./matrix_cuda.exe
+```
+
 ---
 
 ## 10. Repository Structure
@@ -174,10 +198,15 @@ mpirun -np 4 --hostfile hosts sh -c '$HOME/matrix_mpi'
 ```text
 Parallel-and-GPU-Computing/
 │
-├── README.md         # Executive summary, findings, benchmarks & architecture review
+├── README.md         # Executive summary, comparative benchmarks & cross-paradigm analysis
 ├── Sequential.md     # Sequential CPU baseline report, C code & execution output
 ├── OpenMP.md         # OpenMP multi-threaded report, C code & execution output
 ├── MPI.md            # Open MPI cluster deployment, 21 setup screenshots & code
+├── CUDA.md           # CUDA GPU massively parallel report, .cu code & execution output
 ├── images/           # All authentic terminal screenshots & output logs
+│   ├── sequential_olp.png
+│   ├── openmp_olp.png
+│   ├── cuda_olp.jpeg
+│   └── 01_ping_connectivity.jpeg ... 21_mpi_send_recv_output.jpeg
 └── .gitignore        # Ignores compiled binaries and temporary submission files
 ```
