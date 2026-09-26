@@ -10,7 +10,7 @@ Each paradigm executes an identical workload of 128 GFLOPs ($16,000,000$ output 
 
 ## 2. Key Findings
 
-- **CUDA achieves massive speedup**: 0.34 s ($711.66\times$ total speedup, $770.40\times$ kernel speedup across 16,000,000 GPU threads).
+- **CUDA achieves massive speedup**: 0.34 s ($711.68\times$ total speedup, $770.40\times$ kernel speedup across 16,000,000 GPU threads).
 - **OpenMP is fastest CPU model**: 40.55 s (6.02× speedup using 8 threads in shared memory).
 - **Open MPI scales across nodes**: 92.98 s (2.63× speedup across a 4-node VM cluster).
 - **Sequential baseline is slowest**: 244.12 s (single-core CPU execution).
@@ -64,8 +64,9 @@ $$C[i][j] = \sum_{k=0}^{3999} A[i][k] \times B[k][j] \quad \text{for } 0 \le i, 
 | **Sequential** | Single-threaded CPU | 1 CPU Core | **244.120000 s** | **1.00×** (Baseline) | 100.0% (Ref) | `4000.00` (PASS) |
 | **Open MPI** | Distributed cluster | 4 Nodes (VMs) | **92.979510 s** | **2.63×** | **65.8%** | `4000.00` (PASS) |
 | **OpenMP** | Shared-memory thread pool | 8 vCPU Cores | **40.545825 s** | **6.02×** | **75.3%** | `4000.00` (PASS) |
-| **CUDA (Total Phase)** | GPU SIMT Acceleration | 16,000,000 Threads | **0.343028 s** | **711.66×** | — | `4000.00` (PASS) |
-| **CUDA (Kernel Only)** | GPU SIMT Hardware | 16,000,000 Threads | **0.316872 s** | **770.40×** | — | `4000.00` (PASS) |
+| **CUDA** | GPU SIMT Acceleration | 16,000,000 Threads | **0.343020 s** | **711.68×** | — | `4000.00` (PASS) |
+
+*(Note: Total CUDA phase time includes Host-to-Device transfer, kernel execution time of 0.316872 s [770.40× speedup], and Device-to-Host transfer).*
 
 ```
 Execution Time (Lower is Better - Dramatic Performance Scaling)

@@ -170,8 +170,8 @@ The CUDA program executed successfully across 62,500 thread blocks ($16,000,000$
 ## 6. Result & Performance Summary
 
 * **Kernel Execution Time**: **0.316872 seconds** (pure GPU computation)
-* **Total CUDA Phase Time**: **0.343028 seconds** (Host-to-Device transfer + Kernel + Device-to-Host transfer)
+* **Total CUDA Phase Time**: **0.343020 seconds** (Host-to-Device transfer + Kernel + Device-to-Host transfer)
 * **Mathematical Verification**: **$C[0][0] = 4000.00$** (PASS)
 * **Speedup over Sequential Baseline ($244.120000\text{ s}$)**:
   * **Kernel Speedup**: $\frac{244.120000}{0.316872} = \mathbf{770.40\times}$
-  * **End-to-End Speedup (with PCIe memory transfers)**: $\frac{244.120000}{0.343028} = \mathbf{711.66\times}$
+  * **End-to-End Speedup (with PCIe memory transfers)**: $\frac{244.120000}{0.343020} = \mathbf{711.68\times}$
