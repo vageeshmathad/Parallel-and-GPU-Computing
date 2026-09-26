@@ -1,0 +1,17 @@
+# Compiled binaries
+*.exe
+*.o
+*.out
+matrix_sequential
+matrix_openmp
+matrix_mpi
+matrix_cuda
+
+# Build artifacts & temp files
+*.tmp
+*.log
+.vscode/
+
+# Personal / Lab Submission documents
+*.pdf
+*.docx
