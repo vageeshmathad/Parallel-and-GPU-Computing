@@ -1,32 +1,20 @@
 # Comparative Analysis of Parallel & Distributed Computing Paradigms
 
-> **High-Performance Computing Technical Study & Portfolio**  
-> An in-depth comparative benchmarking, architectural evaluation, and cluster deployment of dense $4000 \times 4000$ Matrix Multiplication ($C = A \times B$) across three fundamental computing models: **Sequential CPU Baseline**, **OpenMP Shared-Memory Multi-Threading**, and **Open MPI Multi-Node Distributed Clustering**.
-
----
-
 ## 1. Executive Summary
 
-In high-performance computing, General Matrix Multiplication (GEMM) serves as the canonical benchmark for evaluating processor throughput, memory hierarchy latency, interconnect bandwidth, and parallel scaling efficiency. With an algorithmic complexity of $O(N^3)$ operations over an $O(N^2)$ memory space, matrix multiplication quickly exposes architectural bottlenecks such as CPU cache line invalidations, bus saturation, and distributed network latency.
+This project presents a comparative benchmarking study of dense $4000 \times 4000$ Matrix Multiplication ($C = A \times B$) across three fundamental computing models: **Sequential CPU Baseline**, **OpenMP Shared-Memory Multi-Threading**, and **Open MPI Distributed-Memory Clustering**.
 
-This project delivers a rigorous, end-to-end implementation and empirical performance study of multiplying two dense $4000 \times 4000$ double-precision matrices ($128\text{ GFLOPs}$, $384\text{ MB}$ total heap working memory). The identical mathematical workload was developed and evaluated across three distinct computational tiers:
-
-1. **Sequential CPU Baseline**: Executed on a single core within an isolated Linux user-space (Ubuntu on WSL2), establishing the reference execution time of **$244.120000\text{ seconds}$**.
-2. **OpenMP Shared-Memory Parallelism**: Multi-threaded implementation utilizing **8 CPU threads** sharing unified memory and L3 cache, executing in **$40.545825\text{ seconds}$** ($6.02\times$ speedup).
-3. **Open MPI Distributed Cluster**: Distributed across a multi-node cluster of **4 independent Ubuntu Virtual Machines** (1 Master, 3 Workers on subnet `192.168.190.0/24`) utilizing explicit message passing (`MPI_Scatter`, `MPI_Bcast`, `MPI_Gather`), executing in **$92.979510\text{ seconds}$** ($2.63\times$ speedup).
-
-Every experiment includes deterministic mathematical verification confirming that every output element evaluates to $C[i][j] = 4000.00$, guaranteeing zero algorithmic divergence across computing models.
+Each paradigm executes an identical workload of 128 GFLOPs ($16,000,000$ double-precision elements) with deterministic mathematical verification ($C[i][j] = 4000.00$).
 
 ---
 
 ## 2. Key Findings
 
-* **Peak Speedup with OpenMP (6.02×)**: Reduced runtime from 244.12 s to 40.55 s across 8 CPU threads (75.3% parallel efficiency) using shared-memory multi-threading.
-* **Network Interconnect Overhead in MPI (2.63×)**: Open MPI achieved 92.98 s across 4 nodes, constrained by network serialization of the 128 MB broadcast and 32 MB scatter chunks.
-* **Shared Memory Outperformed Cluster (2.29× faster)**: OpenMP was over 2× faster than Open MPI due to nanosecond-scale RAM access vs. millisecond-scale TCP/IP network latency ($T_{comm} / T_{comp}$).
-* **Memory Stride Penalty on Single Core**: Sequential execution (0.524 GFLOPS) is memory-bound due to stride-$N$ column reads on Matrix $B$ (`B[k * N + j]`), causing frequent L1 cache evictions.
-* **Zero Algorithmic Divergence**: Every implementation produced an identical verification value of $C[0][0] = 4000.00$, proving mathematical equivalence.
-* **Full Multi-Node Deployment**: Successfully provisioned and verified a 4-node VM cluster with private networking, passwordless RSA keys, Open MPI 5.0.10, and distributed communication.
+- **OpenMP is fastest**: 40.55 s (6.02× speedup using 8 threads in shared memory).
+- **Open MPI scales across nodes**: 92.98 s (2.63× speedup across a 4-node VM cluster).
+- **Sequential baseline is slowest**: 244.12 s (single-core CPU execution).
+- **Memory vs. Network**: OpenMP is 2.3× faster than MPI because local RAM access is significantly faster than virtual network packet transmission.
+- **Results verified**: All three implementations produced the exact same output ($C[0][0] = 4000.00$).
 
 ---
 
