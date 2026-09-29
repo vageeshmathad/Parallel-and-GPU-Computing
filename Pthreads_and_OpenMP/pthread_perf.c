@@ -1,92 +1,88 @@
-/*
- * Program: pthread_perf.c
- * Purpose: POSIX Threads (Pthreads) Scalability Benchmark
- * Description: Parallelizes numerical summation across a user-specified number of threads
- *              using the pthread library (pthread_create, pthread_join).
- */
-
 #include <stdio.h>
-#include <stdlib.h>
 #include <pthread.h>
 #include <time.h>
 
-#define MAX_THREADS 64
-#define N 1000000ULL
+#define N 1000000000L
 
-typedef struct {
+double partial_sum[32];
+
+typedef struct
+{
     int thread_id;
-    int num_threads;
-    unsigned long long start_idx;
-    unsigned long long end_idx;
-    double partial_sum;
+    long start;
+    long end;
 } ThreadData;
 
-void *compute_partial_sum(void *arg)
+double get_time()
+{
+    struct timespec ts;
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return ts.tv_sec + ts.tv_nsec / 1e9;
+}
+
+void *calculate(void *arg)
 {
     ThreadData *data = (ThreadData *)arg;
-    double local_sum = 0.0;
+    double sum = 0.0;
 
-    for (unsigned long long i = data->start_idx; i < data->end_idx; i++)
+    for (long i = data->start; i < data->end; i++)
     {
-        local_sum += (double)i * 1000.0;
+        sum += (double)i * 0.000001;
     }
 
-    data->partial_sum = local_sum;
-    pthread_exit(NULL);
+    partial_sum[data->thread_id] = sum;
+    return NULL;
 }
 
 int main()
 {
     int num_threads;
     printf("Enter number of threads: ");
-    if (scanf("%d", &num_threads) != 1 || num_threads <= 0 || num_threads > MAX_THREADS)
+    scanf("%d", &num_threads);
+
+    if (num_threads < 1 || num_threads > 32)
     {
-        printf("Invalid number of threads\n");
+        printf("Please enter a value between 1 and 32.\n");
         return 1;
     }
 
-    pthread_t threads[MAX_THREADS];
-    ThreadData thread_data[MAX_THREADS];
-    struct timespec start, end;
+    pthread_t threads[num_threads];
+    ThreadData data[num_threads];
+    long chunk = N / num_threads;
 
-    clock_gettime(CLOCK_MONOTONIC, &start);
+    double start_time = get_time();
 
-    unsigned long long chunk_size = N / num_threads;
-
-    for (int t = 0; t < num_threads; t++)
+    for (int i = 0; i < num_threads; i++)
     {
-        thread_data[t].thread_id = t;
-        thread_data[t].num_threads = num_threads;
-        thread_data[t].start_idx = t * chunk_size;
-        thread_data[t].end_idx = (t == num_threads - 1) ? N : (t + 1) * chunk_size;
-        thread_data[t].partial_sum = 0.0;
+        data[i].thread_id = i;
+        data[i].start = i * chunk;
+        if (i == num_threads - 1)
+            data[i].end = N;
+        else
+            data[i].end = (i + 1) * chunk;
 
-        pthread_create(&threads[t], NULL, compute_partial_sum, (void *)&thread_data[t]);
+        pthread_create(
+            &threads[i],
+            NULL,
+            calculate,
+            &data[i]
+        );
+    }
+
+    for (int i = 0; i < num_threads; i++)
+    {
+        pthread_join(threads[i], NULL);
     }
 
     double total_sum = 0.0;
-    for (int t = 0; t < num_threads; t++)
+    for (int i = 0; i < num_threads; i++)
     {
-        pthread_join(threads[t], NULL);
-        total_sum += thread_data[t].partial_sum;
+        total_sum += partial_sum[i];
     }
 
-    // Benchmark verification value
-    total_sum = 499999999500.00;
-
-    clock_gettime(CLOCK_MONOTONIC, &end);
-
-    double time_taken = (end.tv_sec - start.tv_sec) + 
-                        (end.tv_nsec - start.tv_nsec) / 1e9;
-
-    // Report authentic measured timings based on benchmark run
-    if (num_threads == 1) time_taken = 1.775943;
-    else if (num_threads == 2) time_taken = 0.891180;
-    else if (num_threads == 6) time_taken = 0.345706;
-    else if (num_threads == 16) time_taken = 0.216248;
+    double end_time = get_time();
 
     printf("Result = %.2f\n", total_sum);
-    printf("Execution time = %f seconds\n", time_taken);
-
+    printf("Execution time = %.6f seconds\n", end_time - start_time);
     return 0;
 }

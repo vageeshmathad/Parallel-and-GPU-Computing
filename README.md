@@ -298,7 +298,14 @@ nvcc -O2 matrix_cuda.cu -o matrix_cuda.exe && ./matrix_cuda.exe
 ```bash
 cd Pthreads_and_OpenMP
 
-# 1. Thread Querying
+# Part A: Foundational Pthreads Programs
+gcc thread1.c -o thread1 -pthread && ./thread1
+gcc thread2.c -o thread2 -pthread && ./thread2
+gcc thread_sum.c -o thread_sum -pthread && ./thread_sum
+gcc race.c -o race -pthread && ./race
+gcc mutex.c -o mutex -pthread && ./mutex
+
+# Part B: OpenMP Concurrency Programs
 gcc -fopenmp omp1.c -o omp1 && ./omp1
 
 # 2. Reduction Sum
@@ -347,16 +354,21 @@ Parallel-and-GPU-Computing/
 │       └── 01_ping_connectivity.jpeg ... 21_mpi_send_recv_output.jpeg
 │
 └── Pthreads_and_OpenMP/        # Module 2: Shared-Memory Concurrency & Synchronization
-    ├── README.md               # Dedicated Pthreads & OpenMP technical manual
-    ├── omp1.c                  # Thread team creation & ID querying
-    ├── omp_sum.c               # Work-sharing loop reduction
-    ├── omp_race.c              # Race condition demonstration (75% data loss)
-    ├── omp_critical.c          # Mutual exclusion via critical section
-    ├── omp_barrier.c           # Phased barrier synchronization
-    ├── sequential.c            # Single-threaded summation baseline
-    ├── pthread_perf.c          # Pthreads scalability benchmark (1, 2, 6, 16 threads)
-    ├── omp_perf.c              # OpenMP scalability benchmark (1, 4 threads)
-    └── images/                 # 10 authentic terminal output screenshots
+    ├── README.md               # Dedicated Pthreads & OpenMP technical laboratory manual
+    ├── thread1.c               # Step 1: Single thread creation and joining
+    ├── thread2.c               # Step 2: Spawning multiple threads (4 threads)
+    ├── thread_sum.c            # Step 3: Array chunk partitioning and partial sums
+    ├── race.c                  # Step 4: Pthreads race condition demonstration
+    ├── mutex.c                 # Step 5: Fixing race condition with pthread_mutex
+    ├── omp1.c                  # Step 6: OpenMP parallel region and thread IDs
+    ├── omp_sum.c               # Step 7: OpenMP work-sharing loop and reduction
+    ├── omp_race.c              # Step 8: OpenMP race condition demonstration
+    ├── omp_critical.c          # Step 9: OpenMP critical section mutual exclusion
+    ├── omp_barrier.c           # Step 10: OpenMP phased barrier coordination
+    ├── sequential.c            # Step 11: Single-threaded summation baseline (N=10^9)
+    ├── pthread_perf.c          # Step 12: Pthreads scalability benchmark (1 to 16 threads)
+    ├── omp_perf.c              # Step 14: OpenMP scalability benchmark (1 to 16 threads)
+    └── images/                 # All 10 authentic execution output screenshots
         ├── 01_omp_hello_16threads.jpeg
         ├── 02_omp_sum_reduction.jpeg
         ├── 03_omp_race_condition.jpeg
