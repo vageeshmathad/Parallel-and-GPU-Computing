@@ -1,246 +1,333 @@
-# Comparative Analysis of Sequential, OpenMP, MPI, CUDA, and Pthreads
+# Comparative Analysis: Sequential, OpenMP, MPI, CUDA, and Pthreads
 
-> **A Practical Performance Benchmark of Parallel and GPU Computing Paradigms**  
-> This repository provides an end-to-end performance comparison of modern parallel computing models—ranging from single-core CPU baselines to shared-memory multi-threading (OpenMP & Pthreads), distributed-memory clustering (Open MPI), and GPU acceleration (NVIDIA CUDA).
+This repository contains performance benchmarks and implementations across parallel and distributed computing paradigms, organized into two core experiments:
+
+1. **Dense Matrix Multiplication ($4000 \times 4000$)**: Evaluates compute throughput across Sequential CPU, OpenMP (8 cores), Open MPI (4-node virtual cluster), and NVIDIA CUDA (16 million GPU threads).
+2. **Concurrency, Synchronization & Scalability**: Analyzes multi-threaded shared-memory programming, race conditions (losing ~75% of updates), mutual exclusion, barrier synchronization, and scaling benchmarks on POSIX Threads (Pthreads: 1–16 threads) and OpenMP.
 
 ---
 
-## 📌 Repository Organization at a Glance
+## Repository Layout
 
-The project is structured into two self-contained module directories:
+All code and standalone technical reports are organized into two dedicated folders:
 
-| Module Directory | Primary Focus | Paradigms & Workloads | Key Artifacts |
+| Directory | Topic | Included Implementations | Contents |
 | :--- | :--- | :--- | :--- |
-| 📁 [**`Matrix_Multiplication/`**](./Matrix_Multiplication) | **Compute-Bound Throughput** | Sequential vs. OpenMP (8 Cores) vs. Open MPI (4 VMs) vs. CUDA (16M Threads) on **$4000 \times 4000$ Matrix Multiplication** (128 GFLOPs) | 4 C/CUDA source files, 4 detailed reports, and 24 authentic terminal/cluster screenshots |
-| 📁 [**`Pthreads_and_OpenMP/`**](./Pthreads_and_OpenMP) | **Shared-Memory Concurrency & Scalability** | Thread teams, Race Conditions (75% data loss), Critical Sections, Barriers, and Scaling (1 to 16 threads) on **$10^6$ Element Summation** | 8 C source files, dedicated technical manual, and 10 authentic benchmark screenshots |
+| [**`Matrix_Multiplication/`**](./Matrix_Multiplication) | Compute-bound matrix multiplication | Sequential C, OpenMP C, Open MPI C, CUDA C++ | 4 source codes, 4 detailed reports, and 24 terminal/cluster screenshots |
+| [**`Pthreads_and_OpenMP/`**](./Pthreads_and_OpenMP) | Concurrency control & thread scaling | Pthreads C, OpenMP C, Sequential C | 8 source codes, concurrency manual, and 10 output screenshots |
 
 ---
 
-## 📊 Master Benchmark Summary
+## Summary of Results
 
-All implementations were verified against strict mathematical invariants:
-- **Matrix Multiplication**: $C[0][0] = 4000.00$ (Deterministic correctness across all 4 implementations)
-- **Numerical Summation**: $\text{Result} = 499999999500.00$ (Exact across Sequential, Pthreads, and OpenMP)
+All benchmark runs were mathematically validated:
+- **Matrix Multiplication**: $C[0][0] = 4000.00$ (Matches across Sequential, OpenMP, MPI, and CUDA).
+- **Numerical Summation**: $\text{Result} = 499999999500.00$ (Matches across Sequential, Pthreads, and OpenMP).
 
-### Performance Benchmark Table:
-
-| Study | Paradigm | Hardware / Configuration | Execution Time | Speedup | Efficiency | Mathematical Verification |
+| Benchmark | Paradigm | Hardware / Configuration | Execution Time | Speedup | Parallel Efficiency | Correctness |
 | :--- | :--- | :--- | :--- | :--- | :--- | :--- |
-| **Matrix Multiplication** | **Sequential CPU** | 1 Core (Single-Threaded Baseline) | **244.12 s** | **1.00×** | 100.0% (Ref) | `C[0][0] = 4000.00` (PASS) |
-| **Matrix Multiplication** | **Open MPI** | 4 Distributed Virtual Machines | **92.98 s** | **2.63×** | 65.8% | `C[0][0] = 4000.00` (PASS) |
-| **Matrix Multiplication** | **OpenMP** | 8 vCPU Cores (Shared Memory) | **40.55 s** | **6.02×** | **75.3%** | `C[0][0] = 4000.00` (PASS) |
-| **Matrix Multiplication** | **NVIDIA CUDA** | 16,000,000 GPU Threads (Total PCIe Phase) | **0.34 s** | **711.66×** | — | `C[0][0] = 4000.00` (PASS) |
-| **Numerical Summation** | **Sequential Baseline** | 1 Core | **1.78 s** | **1.00×** | 100.0% (Ref) | `499999999500.00` (PASS) |
-| **Numerical Summation** | **Pthreads** | 2 Threads | **0.89 s** | **1.99×** | **99.5%** | `499999999500.00` (PASS) |
-| **Numerical Summation** | **OpenMP** | 4 Threads | **0.49 s** | **3.66×** | **91.5%** | `499999999500.00` (PASS) |
-| **Numerical Summation** | **Pthreads** | 6 Threads | **0.35 s** | **5.16×** | **86.0%** | `499999999500.00` (PASS) |
-| **Numerical Summation** | **Pthreads** | 16 Threads | **0.22 s** | **8.25×** | **51.6%** | `499999999500.00` (PASS) |
+| **Matrix Multiplication** | **Sequential CPU** | 1 Core (Single-Threaded) | **244.12 s** | **1.00×** (Ref) | 100.0% | `4000.00` (PASS) |
+| **Matrix Multiplication** | **Open MPI** | 4 VM Cluster Nodes | **92.98 s** | **2.63×** | 65.8% | `4000.00` (PASS) |
+| **Matrix Multiplication** | **OpenMP** | 8 vCPU Cores | **40.55 s** | **6.02×** | **75.3%** | `4000.00` (PASS) |
+| **Matrix Multiplication** | **NVIDIA CUDA** | 16M GPU Threads (Total PCIe) | **0.34 s** | **711.66×** | — | `4000.00` (PASS) |
+| **Numerical Summation** | **Sequential CPU** | 1 Core (Baseline) | **1.78 s** | **1.00×** (Ref) | 100.0% | `PASS` |
+| **Numerical Summation** | **Pthreads** | 2 Threads | **0.89 s** | **1.99×** | **99.5%** | `PASS` |
+| **Numerical Summation** | **OpenMP** | 4 Threads | **0.49 s** | **3.66×** | **91.5%** | `PASS` |
+| **Numerical Summation** | **Pthreads** | 6 Threads | **0.35 s** | **5.16×** | **86.0%** | `PASS` |
+| **Numerical Summation** | **Pthreads** | 16 Threads | **0.22 s** | **8.25×** | **51.6%** | `PASS` |
 
 ---
 
-### Visual Speedup Comparison (Matrix Multiplication):
+## Part 1: Dense Matrix Multiplication (4000 x 4000)
+
+Each implementation multiplies two $4000 \times 4000$ double/float matrices, performing $2 \times (4000)^3 = 128 \text{ GFLOPs}$.
+
+### Visual Performance Comparison
 
 ```mermaid
 xychart-beta
-    title "Matrix Multiplication Speedup Relative to Sequential (Higher is Better)"
-    x-axis ["Sequential (1 Core)", "Open MPI (4 VMs)", "OpenMP (8 Cores)", "CUDA (GPU 16M Threads)"]
-    y-axis "Speedup Factor" 0 --> 800
+    title "Matrix Multiplication Speedup Multiplier (Higher is Better)"
+    x-axis ["Sequential (1 Core)", "Open MPI (4 VMs)", "OpenMP (8 Cores)", "CUDA (16M Threads)"]
+    y-axis "Speedup" 0 --> 800
     bar [1.0, 2.63, 6.02, 711.66]
 ```
 
 ```text
 Execution Time Comparison (Lower is Better):
-Sequential (1 Core)  : [████████████████████████████████████████] 244.12 s (1.00x)
-Open MPI (4 VMs)     : [███████████████                        ]  92.98 s (2.63x)
-OpenMP (8 Cores)     : [██████                                ]  40.55 s (6.02x)
-NVIDIA CUDA (GPU)    : [▏                                     ]   0.34 s (711.66x)
+Sequential (1 Core)  : [████████████████████████████████████████] 244.12 s (1.00x Baseline)
+Open MPI (4 VMs)     : [███████████████                        ]  92.98 s (2.63x Speedup)
+OpenMP (8 Cores)     : [██████                                ]  40.55 s (6.02x Speedup)
+NVIDIA CUDA (GPU)    : [▏                                     ]   0.34 s (711.66x Speedup)
 ```
 
 ---
 
-## 🚀 Part 1: Dense Matrix Multiplication Benchmarking
-
-This study computes dense matrix multiplication $C = A \times B$ for $N = 4000$ ($16\text{ million}$ elements, $128\text{ GFLOPs}$).
-
 ### 1. Sequential CPU Baseline
-- **How It Works**: Standard three nested loops running on a single CPU thread.
-- **Source File**: [`Matrix_Multiplication/matrix_sequential.c`](./Matrix_Multiplication/matrix_sequential.c) | [Detailed Analysis](./Matrix_Multiplication/Sequential.md)
-- **Run Command**:
+- **Description**: Standard $O(N^3)$ nested loops on a single CPU thread.
+- **Source**: [`Matrix_Multiplication/matrix_sequential.c`](./Matrix_Multiplication/matrix_sequential.c) | [Detailed Analysis](./Matrix_Multiplication/Sequential.md)
+- **Compile & Run**:
   ```bash
   gcc -O2 Matrix_Multiplication/matrix_sequential.c -o matrix_sequential && ./matrix_sequential
   ```
-- **Terminal Output**:
+- **Output**:
   ![Sequential Output](./Matrix_Multiplication/images/sequential_olp.png)
-- **Key Takeaway**: Runtime was **`244.12 seconds`**. The single-core CPU suffers from continuous cache misses when traversing Matrix $B$ in column order, as each step jumps $32\text{ KB}$ across RAM, evicting 64-byte L1/L2 cache lines.
+- **Why it is slow**: In row-major layout, accessing Matrix $B$ (`B[k * N + j]`) jumps $32\text{ KB}$ across RAM every step, causing continuous cache line evictions and memory bus stalls ($244.12\text{ s}$).
 
 ---
 
 ### 2. OpenMP Multi-Threading (Shared Memory)
-- **How It Works**: Parallelizes the outer loop across 8 CPU threads using `#pragma omp parallel for private(j, k) schedule(static)`.
-- **Source File**: [`Matrix_Multiplication/matrix_openmp.c`](./Matrix_Multiplication/matrix_openmp.c) | [Detailed Analysis](./Matrix_Multiplication/OpenMP.md)
-- **Run Command**:
+- **Description**: Parallelizes outer rows across 8 CPU threads using `#pragma omp parallel for`.
+- **Source**: [`Matrix_Multiplication/matrix_openmp.c`](./Matrix_Multiplication/matrix_openmp.c) | [Detailed Analysis](./Matrix_Multiplication/OpenMP.md)
+- **Compile & Run**:
   ```bash
   export OMP_NUM_THREADS=8
   gcc -O2 -fopenmp Matrix_Multiplication/matrix_openmp.c -o matrix_openmp && ./matrix_openmp
   ```
-- **Terminal Output**:
+- **Output**:
   ![OpenMP Output](./Matrix_Multiplication/images/openmp_olp.png)
-- **Key Takeaway**: Runtime dropped to **`40.55 seconds`** (**$6.02\times$ speedup, $75.3\%$ efficiency**). OpenMP threads share a unified physical address space and read Matrix $B$ simultaneously from shared L3 cache with zero network or copy latency.
+- **Why it scales well**: OpenMP threads share the same physical RAM. All 8 cores access Matrix $B$ through shared on-chip L3 cache with zero copy overhead, achieving **$6.02\times$ speedup** and **$75.3\%$ efficiency** ($40.55\text{ s}$).
 
 ---
 
-### 3. Open MPI Distributed Cluster (4 Virtual Machines)
-- **How It Works**: Distributes rows across 4 independent VM nodes (1 Master at `192.168.190.128`, 3 Workers) via SSH using `MPI_Scatter`, `MPI_Bcast`, and `MPI_Gather`.
-- **Source File**: [`Matrix_Multiplication/matrix_mpi.c`](./Matrix_Multiplication/matrix_mpi.c) | [Detailed Cluster Setup & 21 Screenshots](./Matrix_Multiplication/MPI.md)
-- **Run Command**:
+### 3. Open MPI Distributed Cluster (4 Nodes)
+- **Description**: Distributes rows across 4 independent virtual machines over a local network using `MPI_Scatter`, `MPI_Bcast`, and `MPI_Gather`.
+- **Source**: [`Matrix_Multiplication/matrix_mpi.c`](./Matrix_Multiplication/matrix_mpi.c) | [Cluster Setup Guide & 21 Screenshots](./Matrix_Multiplication/MPI.md)
+- **Compile & Run**:
   ```bash
   mpicc -O2 Matrix_Multiplication/matrix_mpi.c -o matrix_mpi
   mpirun -np 4 --hostfile hosts ./matrix_mpi
   ```
-- **Terminal Output**:
+- **Output**:
   ![Open MPI Send Recv Output](./Matrix_Multiplication/images/21_mpi_send_recv_output.jpeg)
-- **Key Takeaway**: Runtime was **`92.98 seconds`** (**$2.63\times$ speedup**). While slower than shared-memory OpenMP due to network transmission over virtual Ethernet bridges (broadcasting the $128\text{ MB}$ matrix), Open MPI is not constrained by a single motherboard's RAM and can scale horizontally across thousands of nodes in cloud clusters.
+
+#### Cluster Network Topology & Data Distribution Flow
+```mermaid
+graph TD
+    Master["Master Node (Rank 0)<br>192.168.190.128"]
+    W1["Worker 1 (Rank 1)<br>192.168.190.129"]
+    W2["Worker 2 (Rank 2)<br>192.168.190.130"]
+    W3["Worker 3 (Rank 3)<br>192.168.190.131"]
+
+    Master -->|"MPI_Scatter (1000 rows, 32 MB)"| Master
+    Master -->|"MPI_Scatter (1000 rows, 32 MB)"| W1
+    Master -->|"MPI_Scatter (1000 rows, 32 MB)"| W2
+    Master -->|"MPI_Scatter (1000 rows, 32 MB)"| W3
+
+    Master -->|"MPI_Bcast (Full Matrix B, 128 MB)"| W1
+    Master -->|"MPI_Bcast (Full Matrix B, 128 MB)"| W2
+    Master -->|"MPI_Bcast (Full Matrix B, 128 MB)"| W3
+
+    W1 -->|"MPI_Gather (Partial C rows)"| Master
+    W2 -->|"MPI_Gather (Partial C rows)"| Master
+    W3 -->|"MPI_Gather (Partial C rows)"| Master
+```
+- **Why network limits speedup**: Broadcasting the $128\text{ MB}$ Matrix $B$ over virtual Ethernet bridges adds serialization latency. Despite network overhead, it achieved a **$2.63\times$ speedup** ($92.98\text{ s}$) and can scale across multiple physical machines without motherboard RAM limits.
 
 ---
 
 ### 4. NVIDIA CUDA GPU Acceleration
-- **How It Works**: Offloads computation to the GPU using a 2D grid of thread blocks ($250 \times 250$ blocks, $16 \times 16$ threads = **16,000,000 active concurrent threads**).
-- **Source File**: [`Matrix_Multiplication/matrix_cuda.cu`](./Matrix_Multiplication/matrix_cuda.cu) | [Detailed Analysis](./Matrix_Multiplication/CUDA.md)
-- **Run Command**:
+- **Description**: Offloads computation to an NVIDIA GPU using a 2D grid ($250 \times 250$ blocks, $16 \times 16$ threads = **16,000,000 active threads**), computing each cell concurrently.
+- **Source**: [`Matrix_Multiplication/matrix_cuda.cu`](./Matrix_Multiplication/matrix_cuda.cu) | [Detailed Analysis](./Matrix_Multiplication/CUDA.md)
+- **Compile & Run**:
   ```bash
   nvcc -O2 Matrix_Multiplication/matrix_cuda.cu -o matrix_cuda.exe && ./matrix_cuda.exe
   ```
-- **Terminal Output**:
+- **Output**:
   ![CUDA Output](./Matrix_Multiplication/images/cuda_olp.jpeg)
-- **Key Takeaway**: Total execution completed in **`0.34 seconds`** (**$711.66\times$ overall speedup**), with the kernel computing in just **`0.316872 seconds`** (**$770.40\times$ speedup**). The GPU's hardware warp scheduler manages thousands of threads concurrently, instantly switching between warps to completely hide memory latency.
+- **Why it is dramatically faster**: The GPU executes computation across streaming multiprocessors in warps of 32 threads. When one warp stalls on memory, another warp executes immediately, achieving near 100% compute utilization and finishing in **`0.34 seconds`** (**$711.66\times$ speedup**).
 
 ---
 
-## ⚙️ Part 2: Shared-Memory Concurrency, Synchronization & Scalability
+## Part 2: Concurrency, Synchronization & Thread Scaling
 
-This study investigates low-level concurrency control, the mechanics of race conditions, mutual exclusion, barriers, and multi-thread scalability across **Pthreads** and **OpenMP**.
-
-### 1. Spawning Thread Teams & Querying IDs (`omp1.c`)
-- Spawns 16 concurrent threads using `#pragma omp parallel num_threads(16)` and queries `omp_get_thread_num()`.
-- **Output**:
-  ![OpenMP Hello 16 Threads](./Pthreads_and_OpenMP/images/01_omp_hello_16threads.jpeg)
-- **Insight**: Threads execute and finish in non-deterministic order (e.g. 14, 13, 6, 8, 15...) based on CPU OS scheduling. Each thread maintains its own private stack frame for thread-safe local variables.
+This study evaluates multi-threaded shared-memory programming, low-level concurrency bugs, synchronization primitives, and scaling behavior across **POSIX Threads (Pthreads)** and **OpenMP**.
 
 ---
 
-### 2. Work-Sharing Loop Reduction (`omp_sum.c`)
-- Distributes an 8-element array across threads and computes the sum using `#pragma omp parallel for reduction(+:total_sum)`.
-- **Output**:
-  ![OpenMP Reduction Output](./Pthreads_and_OpenMP/images/02_omp_sum_reduction.jpeg)
-- **Insight**: Instead of using heavy mutex locks on every addition, the `reduction` clause gives each thread a private accumulator and combines them using a lock-free hardware tree, yielding the exact mathematical total of **360**.
+### 1. Spawning Threads (`omp1.c`)
+Spawns 16 threads using `#pragma omp parallel num_threads(16)` and prints thread rank and team size.
+
+![OpenMP Hello 16 Threads](./Pthreads_and_OpenMP/images/01_omp_hello_16threads.jpeg)
+
+- **Behavior**: Threads complete asynchronously in non-deterministic order (e.g. Thread 14 finishes first, followed by 13, 6, 8...). The OS kernel schedules threads across cores independently.
 
 ---
 
-### 3. The Concurrency Bug: Race Condition Hazard (`omp_race.c`)
-- Four threads concurrently increment a shared `counter` 100,000 times each without synchronization. Expected result: $4 \times 100,000 = \mathbf{400,000}$.
-- **Output**:
-  ![Race Condition Output](./Pthreads_and_OpenMP/images/03_omp_race_condition.jpeg)
-- **Insight**: The actual counter recorded only **`100,182`**—a loss of **299,818 updates (74.95% data corruption)**! Because `counter++` compiles into three CPU instructions (`MOV`, `ADD`, `MOV`), concurrent threads overwrite each other's register updates.
+### 2. Work-Sharing Reduction (`omp_sum.c`)
+Calculates the sum of an 8-element array using `#pragma omp parallel for reduction(+:total_sum)`.
+
+![OpenMP Reduction Output](./Pthreads_and_OpenMP/images/02_omp_sum_reduction.jpeg)
+
+- **Behavior**: Instead of acquiring expensive mutex locks on every addition, the `reduction` clause gives each thread a private accumulator and sums them into `total_sum = 360` at loop completion.
 
 ---
 
-### 4. The Solution: Mutual Exclusion via Critical Section (`omp_critical.c`)
-- Wraps the increment inside `#pragma omp critical`.
-- **Output**:
-  ![Critical Section Output](./Pthreads_and_OpenMP/images/04_omp_critical_section.jpeg)
-- **Insight**: Expected: **400,000**, Actual: **400,000** (**zero data loss**). Mutual exclusion ensures only one thread can execute the increment at any instant, completely preventing race conditions.
+### 3. The Concurrency Hazard: Race Condition (`omp_race.c`)
+Four threads concurrently increment a shared `counter` 100,000 times each without synchronization. Expected result: $4 \times 100,000 = \mathbf{400,000}$.
+
+![Race Condition Output](./Pthreads_and_OpenMP/images/03_omp_race_condition.jpeg)
+
+#### Visual Mechanics of the Race Condition:
+```mermaid
+sequenceDiagram
+    autonumber
+    actor T0 as Thread 0
+    participant RAM as Shared Memory: counter = 50
+    actor T1 as Thread 1
+    T0->>RAM: Read counter into register (reads 50)
+    T1->>RAM: Read counter into register (reads 50)
+    Note over T0: Increment register: 50 + 1 = 51
+    Note over T1: Increment register: 50 + 1 = 51
+    T0->>RAM: Store 51 back to memory
+    T1->>RAM: Store 51 back to memory (OVERWRITES Thread 0!)
+    Note over RAM: Counter is 51 instead of 52 (One update was lost)
+```
+
+- **Observed Result**: The actual counter recorded only **`100,182`**. A total of **299,818 increments were lost (74.95% data corruption)** because `counter++` is not atomic (`MOV`, `ADD`, `MOV`).
+
+---
+
+### 4. The Fix: Mutual Exclusion via Critical Section (`omp_critical.c`)
+Protects the shared increment using `#pragma omp critical`.
+
+![Critical Section Output](./Pthreads_and_OpenMP/images/04_omp_critical_section.jpeg)
+
+- **Observed Result**: Expected: **`400,000`**, Actual: **`400,000`** (**zero lost updates**). Mutual exclusion ensures only one thread can modify the memory address at any given moment.
 
 ---
 
 ### 5. Phased Synchronization: Barrier (`omp_barrier.c`)
-- Coordinates threads across a two-stage computation using `#pragma omp barrier`.
-- **Output**:
-  ![Barrier Output](./Pthreads_and_OpenMP/images/05_omp_barrier_sync.jpeg)
-- **Insight**: Guarantees that all 4 threads complete **Stage 1** before ANY thread is permitted to begin **Stage 2**. Early-arriving threads wait at the barrier, essential for multi-step iterative algorithms.
+Coordinates threads across a two-stage computation using `#pragma omp barrier`.
+
+![Barrier Output](./Pthreads_and_OpenMP/images/05_omp_barrier_sync.jpeg)
+
+#### Visual Flow of Barrier Synchronization:
+```mermaid
+sequenceDiagram
+    autonumber
+    actor T1 as Thread 1
+    actor T3 as Thread 3
+    actor T0 as Thread 0
+    actor T2 as Thread 2
+    Note over T1,T2: STAGE 1 EXECUTION
+    T1->>T1: Finishes Stage 1 (Fastest)
+    Note over T1: WAITING AT BARRIER
+    T3->>T3: Finishes Stage 1
+    Note over T3: WAITING AT BARRIER
+    T0->>T0: Finishes Stage 1
+    Note over T0: WAITING AT BARRIER
+    T2->>T2: Finishes Stage 1 (Last to arrive)
+    Note over T1,T2: BARRIER RELEASED — All threads enter Stage 2 simultaneously
+    Note over T1,T2: STAGE 2 EXECUTION
+```
+
+- **Behavior**: All 4 threads finish Stage 1 before ANY thread begins Stage 2. Faster threads block at the barrier until the slowest thread arrives, essential in iterative algorithms.
 
 ---
 
-### 6. Scalability Benchmark: Sequential vs. Pthreads vs. OpenMP
-Evaluates multi-threaded scaling on a $1,000,000$ element summation (Target Invariant: `499999999500.00`):
+### 6. Scalability Benchmarks: Pthreads vs. OpenMP
 
-- **Sequential Baseline**: **`1.78 s`** ($1.00\times$)
+Evaluates scaling across different thread counts on a $1,000,000$ element summation (Result invariant: `499999999500.00`).
+
+#### Pthreads Scalability Curve (Speedup vs. Threads):
+
+```mermaid
+xychart-beta
+    title "Pthreads Scaling: Measured Speedup (Higher is Better)"
+    x-axis ["1 Thread", "2 Threads", "6 Threads", "16 Threads"]
+    y-axis "Speedup Factor" 0 --> 10
+    line [1.0, 1.99, 5.16, 8.25]
+```
+
+```text
+Pthreads Execution Time Scaling (Lower is Better):
+1 Thread   : [████████████████████████████████████████] 1.78 s (1.00x Baseline)
+2 Threads  : [████████████████████                    ] 0.89 s (1.99x - 99.5% Efficiency)
+6 Threads  : [████████                                ] 0.35 s (5.16x - 86.0% Efficiency)
+16 Threads : [█████                                   ] 0.22 s (8.25x - 51.6% Efficiency)
+```
+
+#### Terminal Outputs:
+- **Sequential Baseline** (`1.78 s`):
   ![Sequential Baseline](./Pthreads_and_OpenMP/images/06_sequential_baseline.jpeg)
-- **Pthreads (1 & 2 Threads)**: 1T = `1.78 s`, 2T = **`0.89 s`** (**$1.99\times$ speedup, $99.5\%$ efficiency**)
-  ![Pthreads 1 & 2 Threads](./Pthreads_and_OpenMP/images/07_pthread_1_and_2_threads.jpeg)
-- **Pthreads (6 Threads)**: **`0.35 s`** (**$5.16\times$ speedup, $86.0\%$ efficiency**)
+- **Pthreads 1 & 2 Threads** (2T: `0.89 s`, **$1.99\times$ speedup, $99.5\%$ efficiency**):
+  ![Pthreads 1 and 2 Threads](./Pthreads_and_OpenMP/images/07_pthread_1_and_2_threads.jpeg)
+- **Pthreads 6 Threads** (`0.35 s`, **$5.16\times$ speedup, $86.0\%$ efficiency**):
   ![Pthreads 6 Threads](./Pthreads_and_OpenMP/images/08_pthread_6_threads.jpeg)
-- **Pthreads (16 Threads)**: **`0.22 s`** (**$8.25\times$ speedup, $51.6\%$ efficiency**)
+- **Pthreads 16 Threads** (`0.22 s`, **$8.25\times$ speedup, $51.6\%$ efficiency**):
   ![Pthreads 16 Threads](./Pthreads_and_OpenMP/images/09_pthread_16_threads.jpeg)
-- **OpenMP (1 & 4 Threads)**: 1T = `1.78 s`, 4T = **`0.49 s`** (**$3.66\times$ speedup, $91.5\%$ efficiency**)
-  ![OpenMP 1 & 4 Threads](./Pthreads_and_OpenMP/images/10_omp_1_and_4_threads.jpeg)
+- **OpenMP 1 & 4 Threads** (4T: `0.49 s`, **$3.66\times$ speedup, $91.5\%$ efficiency**):
+  ![OpenMP 1 and 4 Threads](./Pthreads_and_OpenMP/images/10_omp_1_and_4_threads.jpeg)
+
+- **Analysis**: Pthreads achieves near-perfect linear scaling on 2 threads ($99.5\%$ efficiency). At 16 threads, efficiency drops to $51.6\%$ due to CPU hyper-threading resource sharing (logical cores sharing pipelines) and memory bus saturation.
 
 ---
 
-## 🎯 Architecture Decision Guide: Which Paradigm to Use?
+## Architectural Comparison & Trade-Offs
 
-| Requirement / Scenario | Recommended Paradigm | Key Reason |
-| :--- | :--- | :--- |
-| **Massive data parallelism & tensor math** | **NVIDIA CUDA** | Up to **700×+ speedup** utilizing thousands of GPU cores. |
-| **Fast multi-core CPU speedup on loops** | **OpenMP** | Add simple `#pragma omp` directives with minimal code changes (**75%–91% efficiency**). |
-| **Low-level thread lifecycle control** | **POSIX Threads (Pthreads)** | Direct control over thread priority, affinity, and custom thread pools. |
-| **Datacenter & multi-node clusters** | **Open MPI** | Scales across multiple physical machines without single-motherboard RAM limits. |
-| **Modern High-Performance Production** | **Hybrid (MPI + OpenMP + CUDA)** | Distribute across nodes with MPI, share multi-core CPUs with OpenMP, and accelerate kernels with CUDA. |
+| Paradigm | Target Architecture | Concurrency Scale | Memory Access | Communication Mechanism | Best Used For |
+| :--- | :--- | :--- | :--- | :--- | :--- |
+| **Sequential** | 1 CPU Core | 1 Thread | Local RAM / Cache | None | Baseline testing & small workloads |
+| **OpenMP** | Multi-core CPU Socket | 8–16 Threads | Unified Shared Memory | Shared heap, `#pragma` directives | Parallelizing loops with minimal code changes |
+| **Pthreads** | Multi-core CPU Socket | 2–64 Threads | Unified Shared Memory | Explicit mutexes & thread structs | Fine-grained thread lifecycle and pool control |
+| **Open MPI** | Multi-node Cluster | 4–1000s Nodes | Distributed Private RAM | Network messages (`Scatter`, `Bcast`) | Workloads exceeding single-node RAM capacity |
+| **NVIDIA CUDA** | GPU SMs | 16,000,000 Threads | Dedicated High-Bandwidth VRAM | PCIe DMA (`cudaMemcpy`) | Dense linear algebra and tensor math |
 
 ---
 
-## 💻 Quick-Start Reproduction Guide
+## How to Compile & Run
 
-### Run Matrix Multiplication Benchmarks:
+### Matrix Multiplication:
 ```bash
 cd Matrix_Multiplication
 
-# 1. Sequential CPU Baseline
+# Sequential
 gcc -O2 matrix_sequential.c -o matrix_sequential && ./matrix_sequential
 
-# 2. OpenMP (8 Threads)
+# OpenMP (8 threads)
 export OMP_NUM_THREADS=8 && gcc -O2 -fopenmp matrix_openmp.c -o matrix_openmp && ./matrix_openmp
 
-# 3. Open MPI (4 Nodes)
+# Open MPI (4 processes)
 mpicc -O2 matrix_mpi.c -o matrix_mpi && mpirun -np 4 ./matrix_mpi
 
-# 4. NVIDIA CUDA (GPU)
+# CUDA (NVIDIA GPU)
 nvcc -O2 matrix_cuda.cu -o matrix_cuda.exe && ./matrix_cuda.exe
 ```
 
-### Run Concurrency & Scalability Programs:
+### Concurrency & Thread Scaling:
 ```bash
 cd Pthreads_and_OpenMP
 
-# Thread Team Querying
+# 1. Thread Querying
 gcc -fopenmp omp1.c -o omp1 && ./omp1
 
-# Parallel Reduction Sum
+# 2. Reduction Sum
 gcc -fopenmp omp_sum.c -o omp_sum && ./omp_sum
 
-# Race Condition Demonstration
+# 3. Race Condition Bug
 gcc -fopenmp omp_race.c -o omp_race && ./omp_race
 
-# Critical Section Fix
+# 4. Critical Section Fix
 gcc -fopenmp omp_critical.c -o omp_critical && ./omp_critical
 
-# Phased Barrier Synchronization
+# 5. Barrier Synchronization
 gcc -fopenmp omp_barrier.c -o omp_barrier && ./omp_barrier
 
-# Pthreads Scalability Benchmark (Enter 1, 2, 6, 16)
+# 6. Pthreads Scalability (Enter 1, 2, 6, 16)
 gcc -O2 -pthread pthread_perf.c -o pthread_perf && ./pthread_perf
 
-# OpenMP Scalability Benchmark (Enter 1, 4)
+# 7. OpenMP Scalability (Enter 1, 4)
 gcc -O2 -fopenmp omp_perf.c -o omp_perf && ./omp_perf
 ```
 
 ---
 
-## 📁 Repository Structure
+## Repository Tree
 
 ```text
 Parallel-and-GPU-Computing/
 │
-├── README.md                   # Master combined comparative analysis & executive report
+├── README.md                   # Master benchmark report & comparative analysis
 ├── .gitignore                  # Ignores compiled binaries, objects, and temp files
 │
 ├── Matrix_Multiplication/      # Module 1: Dense Matrix Multiplication (4000 x 4000)
