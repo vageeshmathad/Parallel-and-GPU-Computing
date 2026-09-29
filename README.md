@@ -17,6 +17,10 @@ When developing high-performance software, choosing the appropriate parallel com
    - Explores low-level concurrency hazards (race conditions losing 75% of updates) and their synchronization solutions (mutual exclusion via critical sections and phased barrier synchronization).
    - Evaluates multi-threaded scaling for large-scale numerical summation ($10^6$ elements, verified result `499999999500.00`) across **POSIX Threads (Pthreads: 1, 2, 6, 16 threads)** and **OpenMP (1, 4 threads)**.
 
+> **Organized Modular Repository Structure**:
+> - 📂 [**`Matrix_Multiplication/`**](./Matrix_Multiplication): Complete standalone implementations ([`matrix_sequential.c`](./Matrix_Multiplication/matrix_sequential.c), [`matrix_openmp.c`](./Matrix_Multiplication/matrix_openmp.c), [`matrix_mpi.c`](./Matrix_Multiplication/matrix_mpi.c), [`matrix_cuda.cu`](./Matrix_Multiplication/matrix_cuda.cu)), dedicated reports ([`Sequential.md`](./Matrix_Multiplication/Sequential.md), [`OpenMP.md`](./Matrix_Multiplication/OpenMP.md), [`MPI.md`](./Matrix_Multiplication/MPI.md), [`CUDA.md`](./Matrix_Multiplication/CUDA.md)), and all 24 authentic cluster & execution output screenshots.
+> - 📂 [**`Pthreads_and_OpenMP/`**](./Pthreads_and_OpenMP): Complete standalone C implementations (`omp1.c`–`omp_barrier.c`, `pthread_perf.c`, `omp_perf.c`), dedicated technical report ([`README.md`](./Pthreads_and_OpenMP/README.md)), and all 10 authentic output screenshots.
+
 ```mermaid
 flowchart TD
     subgraph Repo["Parallel & Distributed Computing Paradigms"]
@@ -157,12 +161,12 @@ gcc -O2 matrix_sequential.c -o matrix_sequential
 ```
 
 #### Terminal Output Screenshot:
-![Sequential Execution Output](./images/sequential_olp.png)
+![Sequential Execution Output](./Matrix_Multiplication/images/sequential_olp.png)
 
 #### In-Depth Output Analysis & Architecture Breakdown:
 * **Measured Baseline Time**: **`244.120000 seconds`** (Establishing $S = 1.00\times$).
 * **Memory Stride Penalty (The Cache Bottleneck)**: In C, 2D arrays are laid out in row-major contiguous memory. While accessing Matrix $A$ (`A[i * N + k]`) moves sequentially along memory with high L1/L2 cache spatial locality, accessing Matrix $B$ (`B[k * N + j]`) jumps by $4000 \times 8\text{ bytes} = 32\text{ KB}$ per step $k$. Because each CPU cache line is only 64 bytes, every access to $B$ evicts previously cached data, forcing continuous RAM bus fetches and capping single-core throughput at $0.524\text{ GFLOPs}$.
-* **Dedicated Module**: [View Sequential.md](./Sequential.md)
+* **Dedicated Module**: [View Sequential.md](./Matrix_Multiplication/Sequential.md)
 
 ---
 
@@ -221,13 +225,13 @@ gcc -O2 -fopenmp matrix_openmp.c -o matrix_openmp
 ```
 
 #### Terminal Output Screenshot:
-![OpenMP Execution Output](./images/openmp_olp.png)
+![OpenMP Execution Output](./Matrix_Multiplication/images/openmp_olp.png)
 
 #### In-Depth Output Analysis & Architecture Breakdown:
 * **Measured Performance**: Runtime reduced to **`40.545825 seconds`**, delivering a **$6.02\times$ speedup** and **$75.3\%$ parallel efficiency** across 8 vCPU cores.
 * **Shared-Memory Efficiency**: OpenMP operates over a unified physical address space. All 8 threads read Matrix $B$ directly from unified system RAM and shared L3 cache with zero memory duplication or network latency.
 * **Cache Line Isolation**: Static scheduling allocates 500 contiguous rows of Matrix $C$ per thread ($500 \times 4000 \times 8\text{ bytes} = 16\text{ MB}$), ensuring that no two threads write to the same 64-byte cache line, completely eliminating false sharing.
-* **Dedicated Module**: [View OpenMP.md](./OpenMP.md)
+* **Dedicated Module**: [View OpenMP.md](./Matrix_Multiplication/OpenMP.md)
 
 ---
 
@@ -301,13 +305,13 @@ mpirun -np 4 --hostfile hosts sh -c '$HOME/matrix_mpi'
 ```
 
 #### Terminal Output Screenshot:
-![Open MPI Cluster Execution Output](./images/21_mpi_send_recv_output.jpeg)
+![Open MPI Cluster Execution Output](./Matrix_Multiplication/images/21_mpi_send_recv_output.jpeg)
 
 #### In-Depth Output Analysis & Architecture Breakdown:
 * **Measured Performance**: Completed in **`92.979510 seconds`**, achieving **$2.63\times$ speedup** and **$65.8\%$ parallel efficiency** across 4 independent VM nodes.
 * **Network Serialization Overhead**: While each node computes only 1000 rows ($25\%$ of total work), execution time is dominated by virtualized Ethernet communication. Broadcasting the full $128\text{ MB}$ Matrix $B$ (`MPI_Bcast`) and scattering $32\text{ MB}$ chunks (`MPI_Scatter`) across virtual bridges introduces serialization latency ($T_{\text{comm}} / T_{\text{comp}}$).
 * **Horizontal Scalability Advantage**: Although slower than OpenMP on a single machine, Open MPI is not constrained by a single motherboard's physical RAM socket limits, allowing workloads to scale across thousands of cloud cluster nodes.
-* **Dedicated Module**: [View MPI.md (With 21 Cluster Deployment Screenshots)](./MPI.md)
+* **Dedicated Module**: [View MPI.md (With 21 Cluster Deployment Screenshots)](./Matrix_Multiplication/MPI.md)
 
 ---
 
@@ -383,7 +387,7 @@ nvcc -O2 matrix_cuda.cu -o matrix_cuda.exe
 ```
 
 #### Terminal Output Screenshot:
-![CUDA Execution Output](./images/cuda_olp.jpeg)
+![CUDA Execution Output](./Matrix_Multiplication/images/cuda_olp.jpeg)
 
 #### In-Depth Output Analysis & Architecture Breakdown:
 * **Measured Performance**:
@@ -391,7 +395,7 @@ nvcc -O2 matrix_cuda.cu -o matrix_cuda.exe
   - **Total CUDA Phase Time (including PCIe memory transfers)**: **`0.343028 seconds`** (**$711.66\times$ speedup**).
 * **Massive Thread-Level Parallelism (TLP)**: The GPU organizes computation into $250 \times 250 = 62,500$ thread blocks with $16 \times 16 = 256$ threads each, creating **16,000,000 active concurrent threads**.
 * **Memory Latency Hiding**: The GPU's hardware warp scheduler manages thousands of warps in flight. When one warp encounters a high-latency VRAM access, the scheduler immediately executes arithmetic instructions on another ready warp, achieving near-100% compute unit saturation.
-* **Dedicated Module**: [View CUDA.md](./CUDA.md)
+* **Dedicated Module**: [View CUDA.md](./Matrix_Multiplication/CUDA.md)
 
 ---
 
@@ -448,7 +452,7 @@ gcc -fopenmp omp1.c -o omp1
 ```
 
 #### Terminal Output Screenshot:
-![OpenMP Hello 16 Threads Output](./images/01_omp_hello_16threads.jpeg)
+![OpenMP Hello 16 Threads Output](./Pthreads_and_OpenMP/images/01_omp_hello_16threads.jpeg)
 
 #### Detailed Technical Description & Behavioral Analysis:
 * **Asynchronous Execution Order**: The terminal output verifies that threads finish non-deterministically: Thread 14 outputs first, followed by Threads 13, 6, 8, 15, 3, 9, 1, 5, 7, 2, 10, 11, 12, 0, and 4.
@@ -489,7 +493,7 @@ gcc -fopenmp omp_sum.c -o omp_sum
 ```
 
 #### Terminal Output Screenshot:
-![OpenMP Work-Sharing Reduction Output](./images/02_omp_sum_reduction.jpeg)
+![OpenMP Work-Sharing Reduction Output](./Pthreads_and_OpenMP/images/02_omp_sum_reduction.jpeg)
 
 #### Detailed Technical Description & Behavioral Analysis:
 * **Loop Chunking**: Loop iterations are mapped to active threads: Thread 7 processes `array[7] = 80`, Thread 4 processes `array[4] = 50`, Thread 2 processes `array[2] = 30`, and so forth.
@@ -531,7 +535,7 @@ gcc -fopenmp omp_race.c -o omp_race
 ```
 
 #### Terminal Output Screenshot:
-![OpenMP Race Condition Output](./images/03_omp_race_condition.jpeg)
+![OpenMP Race Condition Output](./Pthreads_and_OpenMP/images/03_omp_race_condition.jpeg)
 
 #### Detailed Technical Description & Behavioral Analysis:
 * **Catastrophic Data Loss**: The terminal output records `Expected counter = 400000` but `Actual counter = 100182`. A total of **299,818 increments were lost**—representing a **74.95% data corruption rate**.
@@ -579,7 +583,7 @@ gcc -fopenmp omp_critical.c -o omp_critical
 ```
 
 #### Terminal Output Screenshot:
-![OpenMP Critical Section Output](./images/04_omp_critical_section.jpeg)
+![OpenMP Critical Section Output](./Pthreads_and_OpenMP/images/04_omp_critical_section.jpeg)
 
 #### Detailed Technical Description & Behavioral Analysis:
 * **100% Deterministic Verification**: The terminal output confirms `Expected counter = 400000` and `Actual counter = 400000` (**zero lost updates**).
@@ -622,7 +626,7 @@ gcc -fopenmp omp_barrier.c -o omp_barrier
 ```
 
 #### Terminal Output Screenshot:
-![OpenMP Barrier Synchronization Output](./images/05_omp_barrier_sync.jpeg)
+![OpenMP Barrier Synchronization Output](./Pthreads_and_OpenMP/images/05_omp_barrier_sync.jpeg)
 
 #### Detailed Technical Description & Behavioral Analysis:
 * **Strict Phase Isolation**: As captured in the output, Threads 1, 3, 0, and 2 all complete `Stage 1` before ANY thread begins `Stage 2`.
@@ -676,7 +680,7 @@ gcc -O2 sequential.c -o sequential && ./sequential
 ```
 
 #### Terminal Output Screenshot:
-![Sequential Baseline Output](./images/06_sequential_baseline.jpeg)
+![Sequential Baseline Output](./Pthreads_and_OpenMP/images/06_sequential_baseline.jpeg)
 
 * **Baseline Runtime**: **`1.783924 seconds`** ($1.00\times$ Reference Baseline).
 
@@ -753,7 +757,7 @@ gcc -O2 -pthread pthread_perf.c -o pthread_perf
 * **1 Thread**: Execution Time = **`1.775943 s`** (Speedup: $1.00\times$)
 * **2 Threads**: Execution Time = **`0.891180 s`** (**Speedup: $1.99\times$**, **Parallel Efficiency: $99.5\%$**)
 
-![Pthreads 1 and 2 Threads Output](./images/07_pthread_1_and_2_threads.jpeg)
+![Pthreads 1 and 2 Threads Output](./Pthreads_and_OpenMP/images/07_pthread_1_and_2_threads.jpeg)
 
 * **Analysis**: With 2 threads on 2 physical cores, runtime drops from 1.776 s to 0.891 s—achieving near-perfect linear scaling ($99.5\%$ efficiency) due to zero lock contention and independent cache line accesses.
 
@@ -762,7 +766,7 @@ gcc -O2 -pthread pthread_perf.c -o pthread_perf
 ##### Benchmark Run B: 6 Threads
 * **6 Threads**: Execution Time = **`0.345706 s`** (**Speedup: $5.16\times$**, **Parallel Efficiency: $86.0\%$**)
 
-![Pthreads 6 Threads Output](./images/08_pthread_6_threads.jpeg)
+![Pthreads 6 Threads Output](./Pthreads_and_OpenMP/images/08_pthread_6_threads.jpeg)
 
 * **Analysis**: Scaling across 6 threads drops runtime to 0.346 s, confirming sustained throughput across performance cores with minimal scheduling jitter.
 
@@ -771,7 +775,7 @@ gcc -O2 -pthread pthread_perf.c -o pthread_perf
 ##### Benchmark Run C: 16 Threads
 * **16 Threads**: Execution Time = **`0.216248 s`** (**Speedup: $8.25\times$**, **Parallel Efficiency: $51.6\%$**)
 
-![Pthreads 16 Threads Output](./images/09_pthread_16_threads.jpeg)
+![Pthreads 16 Threads Output](./Pthreads_and_OpenMP/images/09_pthread_16_threads.jpeg)
 
 * **Analysis**: At 16 threads, runtime reaches the minimum recorded execution time of 0.216 s ($8.25\times$ speedup). Efficiency moderates to 51.6% due to CPU hyper-threading resource sharing (logical cores sharing execution pipelines) and memory bus saturation.
 
@@ -818,7 +822,7 @@ gcc -O2 -fopenmp omp_perf.c -o omp_perf
 ```
 
 #### Terminal Output Screenshot:
-![OpenMP 1 and 4 Threads Output](./images/10_omp_1_and_4_threads.jpeg)
+![OpenMP 1 and 4 Threads Output](./Pthreads_and_OpenMP/images/10_omp_1_and_4_threads.jpeg)
 
 * **1 Thread**: Execution Time = **`1.782525 s`** ($1.00\times$)
 * **4 Threads**: Execution Time = **`0.487638 s`** (**Speedup: $3.66\times$**, **Parallel Efficiency: $91.5\%$**)
@@ -937,38 +941,44 @@ gcc -O2 -fopenmp omp_perf.c -o omp_perf && ./omp_perf
 ```text
 Parallel-and-GPU-Computing/
 │
-├── README.md               # Main comprehensive comparative analysis & benchmark report
-├── Sequential.md           # Matrix Mult: Sequential CPU baseline report & C code
-├── OpenMP.md               # Matrix Mult: OpenMP multi-threaded report & C code
-├── MPI.md                  # Matrix Mult: Open MPI 4-node cluster deployment & 21 screenshots
-├── CUDA.md                 # Matrix Mult: CUDA GPU massively parallel report & .cu code
-├── images/                 # All authentic terminal screenshots & cluster outputs
-│   ├── sequential_olp.png
-│   ├── openmp_olp.png
-│   ├── cuda_olp.jpeg
-│   ├── 01_ping_connectivity.jpeg ... 21_mpi_send_recv_output.jpeg
-│   ├── 01_omp_hello_16threads.jpeg
-│   ├── 02_omp_sum_reduction.jpeg
-│   ├── 03_omp_race_condition.jpeg
-│   ├── 04_omp_critical_section.jpeg
-│   ├── 05_omp_barrier_sync.jpeg
-│   ├── 06_sequential_baseline.jpeg
-│   ├── 07_pthread_1_and_2_threads.jpeg
-│   ├── 08_pthread_6_threads.jpeg
-│   ├── 09_pthread_16_threads.jpeg
-│   └── 10_omp_1_and_4_threads.jpeg
+├── README.md                   # Master combined comparative analysis & benchmark report
+├── .gitignore                  # Ignores compiled binaries, objects, and temporary files
 │
-├── Pthreads_and_OpenMP/    # Comparative Analysis of Shared-Memory Concurrency & Synchronization
-│   ├── README.md           # Pthreads & OpenMP technical manual & benchmark report
-│   ├── omp1.c              # Thread team creation & ID querying
-│   ├── omp_sum.c           # Work-sharing loop reduction
-│   ├── omp_race.c          # Race condition demonstration
-│   ├── omp_critical.c      # Mutual exclusion via critical section
-│   ├── omp_barrier.c       # Phased barrier synchronization
-│   ├── sequential.c        # Single-threaded summation baseline
-│   ├── pthread_perf.c      # Pthreads scalability benchmark (1, 2, 6, 16 threads)
-│   ├── omp_perf.c          # OpenMP scalability benchmark (1, 4 threads)
-│   └── images/             # Local copies of the 10 synchronization output screenshots
+├── Matrix_Multiplication/      # Module 1: Dense Matrix Multiplication (4000 x 4000)
+│   ├── README.md               # Dedicated matrix multiplication report
+│   ├── Sequential.md           # Sequential CPU baseline analysis
+│   ├── OpenMP.md               # OpenMP multi-threading analysis
+│   ├── MPI.md                  # Open MPI 4-node cluster report (21 setup screenshots)
+│   ├── CUDA.md                 # NVIDIA CUDA GPU acceleration report
+│   ├── matrix_sequential.c     # Standalone C source for sequential baseline
+│   ├── matrix_openmp.c         # Standalone C source for OpenMP parallel loops
+│   ├── matrix_mpi.c            # Standalone C source for MPI distributed cluster
+│   ├── matrix_cuda.cu          # Standalone CUDA source for GPU kernel & host DMA
+│   └── images/                 # All 24 authentic output screenshots & cluster deployment logs
+│       ├── sequential_olp.png
+│       ├── openmp_olp.png
+│       ├── cuda_olp.jpeg
+│       └── 01_ping_connectivity.jpeg ... 21_mpi_send_recv_output.jpeg
 │
-└── .gitignore              # Ignores compiled binaries and temporary submission files
+└── Pthreads_and_OpenMP/        # Module 2: Shared-Memory Concurrency & Synchronization
+    ├── README.md               # Dedicated Pthreads & OpenMP technical manual
+    ├── omp1.c                  # Thread team creation & ID querying
+    ├── omp_sum.c               # Work-sharing loop reduction
+    ├── omp_race.c              # Race condition demonstration
+    ├── omp_critical.c          # Mutual exclusion via critical section
+    ├── omp_barrier.c           # Phased barrier synchronization
+    ├── sequential.c            # Single-threaded summation baseline
+    ├── pthread_perf.c          # Pthreads scalability benchmark (1, 2, 6, 16 threads)
+    ├── omp_perf.c              # OpenMP scalability benchmark (1, 4 threads)
+    └── images/                 # 10 authentic terminal output screenshots
+        ├── 01_omp_hello_16threads.jpeg
+        ├── 02_omp_sum_reduction.jpeg
+        ├── 03_omp_race_condition.jpeg
+        ├── 04_omp_critical_section.jpeg
+        ├── 05_omp_barrier_sync.jpeg
+        ├── 06_sequential_baseline.jpeg
+        ├── 07_pthread_1_and_2_threads.jpeg
+        ├── 08_pthread_6_threads.jpeg
+        ├── 09_pthread_16_threads.jpeg
+        └── 10_omp_1_and_4_threads.jpeg
 ```
