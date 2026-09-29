@@ -1,5 +1,11 @@
 # Comparative Analysis of Sequential, OpenMP, MPI, and CUDA
 
+> 📚 **Laboratory Curriculum Portfolio**:
+> - **Experiment 1**: [Comparative Analysis of Matrix Multiplication (Sequential, OpenMP, MPI, CUDA)](#1-summary) *(Detailed Below)*
+> - **Experiment 2**: [Shared-Memory Parallelism & Synchronization (Pthreads & OpenMP)](./exp2/README.md) *(New Experiment)*
+
+---
+
 ## 1. Summary
 
 This project presents a rigorous comparative benchmarking and architectural evaluation of dense $4000 \times 4000$ Matrix Multiplication ($C = A \times B$) across four fundamental computing paradigms:
@@ -373,15 +379,38 @@ This comparative experimental study successfully evaluated dense $4000 \times 40
 ```text
 Parallel-and-GPU-Computing/
 │
-├── README.md         # Executive summary, comparative benchmarks & cross-paradigm analysis
-├── Sequential.md     # Sequential CPU baseline report, C code & execution output
-├── OpenMP.md         # OpenMP multi-threaded report, C code & execution output
-├── MPI.md            # Open MPI cluster deployment, 21 setup screenshots & code
-├── CUDA.md           # CUDA GPU massively parallel report, .cu code & execution output
-├── images/           # All authentic terminal screenshots & output logs
+├── README.md               # Main laboratory portfolio index & Experiment 1 report
+├── Sequential.md           # Exp 1: Sequential CPU baseline report & C code
+├── OpenMP.md               # Exp 1: OpenMP multi-threaded report & C code
+├── MPI.md                  # Exp 1: Open MPI 4-node cluster deployment & 21 screenshots
+├── CUDA.md                 # Exp 1: CUDA GPU massively parallel report & .cu code
+├── images/                 # Exp 1: Authentic terminal screenshots & cluster outputs
 │   ├── sequential_olp.png
 │   ├── openmp_olp.png
 │   ├── cuda_olp.jpeg
 │   └── 01_ping_connectivity.jpeg ... 21_mpi_send_recv_output.jpeg
-└── .gitignore        # Ignores compiled binaries and temporary submission files
+│
+├── exp2/                   # Experiment 2: Shared-Memory Parallelism & Synchronization
+│   ├── README.md           # Exp 2: Comprehensive technical manual & benchmark report
+│   ├── omp1.c              # Exp 2: Thread team creation & ID querying
+│   ├── omp_sum.c           # Exp 2: Work-sharing loop reduction
+│   ├── omp_race.c          # Exp 2: Race condition demonstration
+│   ├── omp_critical.c      # Exp 2: Mutual exclusion via critical section
+│   ├── omp_barrier.c       # Exp 2: Phased barrier synchronization
+│   ├── sequential.c        # Exp 2: Single-threaded summation baseline
+│   ├── pthread_perf.c      # Exp 2: Pthreads scalability benchmark (1, 2, 6, 16 threads)
+│   ├── omp_perf.c          # Exp 2: OpenMP scalability benchmark (1, 4 threads)
+│   └── images/             # Exp 2: 10 authentic terminal output screenshots
+│       ├── 01_omp_hello_16threads.jpeg
+│       ├── 02_omp_sum_reduction.jpeg
+│       ├── 03_omp_race_condition.jpeg
+│       ├── 04_omp_critical_section.jpeg
+│       ├── 05_omp_barrier_sync.jpeg
+│       ├── 06_sequential_baseline.jpeg
+│       ├── 07_pthread_1_and_2_threads.jpeg
+│       ├── 08_pthread_6_threads.jpeg
+│       ├── 09_pthread_16_threads.jpeg
+│       └── 10_omp_1_and_4_threads.jpeg
+│
+└── .gitignore              # Ignores compiled binaries and temporary submission files
 ```
