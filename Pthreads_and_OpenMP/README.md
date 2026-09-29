@@ -1,7 +1,5 @@
 # Comparative Analysis of Shared-Memory Concurrency & Synchronization (Pthreads and OpenMP)
 
-## 1. Summary
-
 This study presents an in-depth comparative investigation into multi-threaded shared-memory computing, thread synchronization, and parallel scalability on a multi-core symmetric multiprocessing (SMP) architecture. The analysis compares two foundational shared-memory standards:
 - **POSIX Threads (Pthreads)**: Low-level explicit thread programming API providing fine-grained thread lifecycle and scheduling control.
 - **OpenMP**: High-level directive-based compiler abstractions enabling automated loop partitioning and runtime work-sharing.
